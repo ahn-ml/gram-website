@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="How should future neural reasoning systems implement extended computation? We introduce Generative Recursive reAsoning Models (GRAM), a framework that turns recursive latent reasoning into probabilistic multi-trajectory computation.">
+  <meta property="og:title" content="GRAM: Generative Recursive Reasoning"/>
+  <meta property="og:description" content="GRAM turns recursive latent reasoning into probabilistic multi-trajectory computation, enabling multiple hypotheses, alternative solution strategies, and inference-time scaling through both recursive depth and parallel trajectory sampling."/>
+  <meta property="og:url" content="https://ahn-ml.github.io/gram-website/"/>
+  <meta property="og:image" content="static/images/fig1.png" />
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+
+  <meta name="twitter:title" content="GRAM: Generative Recursive Reasoning">
+  <meta name="twitter:description" content="GRAM turns recursive latent reasoning into probabilistic multi-trajectory computation, enabling multiple hypotheses and inference-time scaling.">
+  <meta name="twitter:image" content="static/images/fig1.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="keywords" content="GRAM, generative model, recursive reasoning, latent reasoning, ARC, variational inference, multi-trajectory, probabilistic reasoning">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>GRAM: Generative Recursive Reasoning</title>
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro"
+  rel="stylesheet">
+
+  <link rel="stylesheet" href="static/css/bulma.min.css">
+  <link rel="stylesheet" href="static/css/bulma-carousel.min.css">
+  <link rel="stylesheet" href="static/css/bulma-slider.min.css">
+  <link rel="stylesheet" href="static/css/fontawesome.all.min.css">
+  <link rel="stylesheet"
+  href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+  <link rel="stylesheet" href="static/css/index.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="static/js/fontawesome.all.min.js"></script>
+  <script src="static/js/bulma-carousel.min.js"></script>
+  <script src="static/js/bulma-slider.min.js"></script>
+  <script src="static/js/index.js"></script>
+
+  <style>
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.95em; }
+    .results-table th, .results-table td { padding: 8px 12px; text-align: center; border-bottom: 1px solid #ddd; }
+    .results-table th { background: #f5f5f5; font-weight: 600; }
+    .results-table .highlight { background: #eef3ff; font-weight: 600; }
+    .results-table .gray { color: #888; }
+    .traj-compare { display: flex; gap: 1.5em; align-items: flex-start; flex-wrap: wrap; }
+    .traj-compare > div { flex: 1; min-width: 280px; }
+  </style>
+</head>
+<body>
+
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container is-max-desktop">
+      <div class="columns is-centered">
+        <div class="column has-text-centered">
+          <h1 class="title is-1 publication-title">Generative Recursive Reasoning</h1>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block">
+              <a href="https://cun-bjy.github.io/" target="_blank">Junyeob Baek</a><sup>1&dagger;</sup>,</span>
+            <span class="author-block">
+              <a href="https://scholar.google.co.kr/citations?user=TgVXif0AAAAJ&hl=ko" target="_blank">Mingyu Jo</a><sup>1&dagger;</sup>,</span>
+            <span class="author-block">
+              <a href="https://minsuukim.github.io/" target="_blank">Minsu Kim</a><sup>1,2</sup>,</span>
+            <span class="author-block">
+              <a href="https://mengyeren.com/" target="_blank">Mengye Ren</a><sup>3</sup>,</span>
+            <span class="author-block">
+              <a href="https://yoshuabengio.org/" target="_blank">Yoshua Bengio</a><sup>2,4</sup>,</span>
+            <span class="author-block">
+              <a href="https://mlml.kaist.ac.kr/sungjinahn" target="_blank">Sungjin Ahn</a><sup>1,3</sup></span>
+          </div>
+
+          <div class="is-size-6 publication-authors" style="margin-top: -0.3em;">
+            <span class="author-block"><sup>&dagger;</sup>Equal contribution</span>
+          </div>
+
+          <div class="is-size-5 publication-authors">
+            <span class="author-block"><sup>1</sup>KAIST,</span>
+            <span class="author-block"><sup>2</sup>Mila &mdash; Qu&eacute;bec AI Institute,</span>
+            <span class="author-block"><sup>3</sup>New York University,</span>
+            <span class="author-block"><sup>4</sup>Universit&eacute; de Montr&eacute;al</span>
+          </div>
+
+          <div class="column has-text-centered">
+            <div class="publication-links">
+              <span class="link-block">
+                  <a href="#" target="_blank"
+                  class="external-link button is-normal is-rounded is-dark">
+                  <span class="icon">
+                    <i class="fas fa-file-pdf"></i>
+                  </span>
+                  <span>Paper (coming soon)</span>
+                </a>
+              </span>
+
+              <span class="link-block">
+                <a href="https://github.com/ahn-ml/gram-release" target="_blank"
+                class="external-link button is-normal is-rounded is-dark">
+                <span class="icon">
+                  <i class="fab fa-github"></i>
+                </span>
+                <span>Code</span>
+              </a>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Abstract -->
+<section class="section hero is-light">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">Abstract</h2>
+        <div class="content has-text-justified">
+            <p style="font-size: 1.1em;">
+            How should future neural reasoning systems implement extended computation? Recursive Reasoning Models (RRMs) offer a promising alternative to autoregressive sequence extension by performing iterative latent-state refinement with shared transition functions. Yet existing RRMs are largely deterministic, following a single latent trajectory and converging to a single prediction. We introduce <b>Generative Recursive reAsoning Models (GRAM)</b>, a framework that turns recursive latent reasoning into probabilistic multi-trajectory computation. GRAM models reasoning as a stochastic latent trajectory, enabling multiple hypotheses, alternative solution strategies, and inference-time scaling through both recursive depth and parallel trajectory sampling. This yields a latent-variable generative model supporting conditional reasoning via p(y|x) and, with fixed or absent inputs, unconditional generation via p(x). Trained with amortized variational inference, GRAM improves over deterministic recurrent and recursive baselines on structured reasoning and multi-solution constraint satisfaction tasks, while demonstrating an unconditional generation capability.
+            </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- Overview -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Overview</h2>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            Existing RRMs are fundamentally deterministic: given the same input and initialization, they follow a single latent trajectory and converge to a single prediction. A capable reasoning system should be not only <b>deep</b> (repeated refinement) but also <b>wide</b> (multiple parallel trajectories). GRAM treats the reasoning process itself as a stochastic latent trajectory: at each recursion step, the model samples a transition conditioned on the input and the current reasoning state, rather than deterministically updating to a single next state.
+          </p>
+
+          <img src="static/images/fig1.png" alt="Comparison of Latent Reasoning Trajectories"/>
+          <p class="caption" style="font-size: 1.1em;">
+            <b>Deterministic vs. probabilistic recursive reasoning.</b> (a) Prior RRMs are deterministic &mdash; all runs collapse to an identical trajectory, converging to a single solution. (b) GRAM explores diverse trajectories that reach multiple valid solutions, naturally enabling parallel inference-time scaling.
+          </p>
+        </div>
+
+        <br>
+        <div class="content has-text-centered">
+          <img src="static/images/architecture.png" alt="GRAM Architecture" style="max-width: 500px;"/>
+          <div class="has-text-justified">
+          <p class="caption" style="font-size: 1.1em;">
+            <b>GRAM architecture.</b> A single stochastic latent transition. After K low-level refinements via f<sub>L</sub>, the high-level update f<sub>H</sub> produces a deterministic proposal u<sub>t</sub>, to which learnable stochastic guidance &epsilon;<sub>t</sub> is added: h<sub>t</sub> = u<sub>t</sub> + &epsilon;<sub>t</sub>. The mean encodes a state-dependent direction; the variance controls the amount of exploration.
+          </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr><br>
+  </div>
+
+
+<!-- Challenging Puzzle Tasks -->
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Challenging Puzzle Tasks</h2>
+
+        <div class="content has-text-justified">
+          <img src="static/images/puzzle_perf.png" alt="Puzzle Performance"/>
+          <p class="caption" style="font-size: 1.1em;">
+            On both Sudoku-Extreme and ARC-AGI, GRAM consistently outperforms all deterministic recursive baselines (Looped TF, HRM, TRM), demonstrating that stochastic latent transitions yield substantial gains within the recursive-reasoning paradigm.
+          </p>
+        </div>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>Stochastic guidance improves reasoning.</b> While Looped TF, HRM, and TRM are restricted to learning from a single deterministic path, GRAM leverages stochastic transitions to explore diverse reasoning trajectories. By training on this richer distribution of solution paths, GRAM acquires more robust reasoning capabilities, allowing it to navigate complex problem spaces more effectively than models constrained to a single sequential refinement process.
+          </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/table_challenging.png" alt="Challenging Puzzle Results" style="max-width: 600px;"/>
+        </div>
+
+        <br>
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>Parallel sampling provides a new test-time scaling axis.</b> GRAM supports two complementary axes of inference-time scaling: <i>depth</i>, by varying the number of recursive transitions, and <i>width</i>, by sampling multiple latent reasoning trajectories in parallel. To select the best trajectory, we employ a Latent Process Reward Model (LPRM) that predicts output correctness from the latent state.
+          </p>
+        </div>
+
+        <div class="content has-text-justified">
+          <img src="static/images/scaling.png" alt="Inference-Time Scaling"/>
+          <p class="caption" style="font-size: 1.1em;">
+            <b>(Left)</b> GRAM with N=20 samples at 16 iterations significantly outperforms TRM at 320 iterations (97.0% vs 90.5%), despite comparable computational budget.
+            <b>(Right)</b> Deterministic recursive models suffer sharp accuracy drops as the number of valid solutions increases, whereas GRAM maintains consistent performance.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr><br>
+  </div>
+
+
+<!-- Multi-Solution Tasks -->
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Multi-Solution Tasks</h2>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>Deterministic recursion fails on multi-solution tasks.</b> Deterministic recursive models structurally cannot capture multiple solutions, with coverage at most 36.1% across all tasks. As the number of valid solutions increases, all three deterministic baselines exhibit sharp accuracy degradation, confirming that deterministic latent updates cause mode collapse when multiple valid outputs exist for the same input.
+          </p>
+          <p style="font-size: 1.1em;">
+            <b>Recursive refinement yields sharper constraint satisfaction.</b> While generative models (AR, MDLM) achieve high coverage, GRAM consistently attains higher accuracy with comparable diversity. On N-Queens, GRAM reaches 99.7% accuracy versus 96.3% (AR) and 96.1% (MDLM). The gap is more pronounced on Graph Coloring, where GRAM reduces conflict edges to 2.7 and 3.3 on 8- and 10-vertex tasks, compared to 19.0 and 61.3 for AR. This demonstrates that recursive refinement enables stricter constraint satisfaction than generative sampling alone.
+          </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/table_csp.png" alt="N-Queens and Graph Coloring Results" style="width: 100%;"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr><br>
+  </div>
+
+
+<!-- Latent Trajectory Visualization -->
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Latent Trajectory Visualization</h2>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            We visualize latent trajectories during recursive computation on Sudoku by projecting the high-level state into 2D via PCA. TRM follows a single deterministic path with no mechanism to escape suboptimal regions. GRAM samples diverse trajectories that explore different regions of latent space &mdash; while some become trapped in local minima, others successfully navigate toward the global optimum, enabling reliable solution discovery through parallel exploration.
+          </p>
+        </div>
+
+        <div class="traj-compare">
+          <div>
+            <img src="static/images/trm_traj.png" alt="TRM Trajectory" style="width:100%;"/>
+            <p class="has-text-centered" style="font-size: 1.05em; margin-top: 0.5em;">
+              <b>TRM:</b> Single deterministic path.
+            </p>
+          </div>
+          <div>
+            <img src="static/images/gram_traj.png" alt="GRAM Trajectories" style="width:100%;"/>
+            <p class="has-text-centered" style="font-size: 1.05em; margin-top: 0.5em;">
+              <b>GRAM (50 samples):</b> Diverse stochastic trajectories.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr><br>
+  </div>
+
+
+<!-- Unconditional Generation -->
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Unconditional Generation</h2>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            GRAM extends from conditional reasoning to unconditional generation. By replacing the input with an empty conditioning signal, the same recursive process defines an unconditional generative model p(x).
+          </p>
+        </div>
+
+        <h4 class="title is-5">Sudoku Generation from Empty Boards</h4>
+        <div class="content has-text-centered">
+          <img src="static/images/gram_sudoku.png" alt="Sudoku Generation" style="max-width: 700px;"/>
+        </div>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>Generative behavior beyond reasoning.</b> GRAM produces valid boards with 99.05% validity using 10.9M parameters and 16 supervision steps, surpassing D3PM baselines that use up to 55.1M parameters and 1000 denoising steps. Constraint satisfaction emerges as a natural byproduct of the recursive generative process.
+          </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/sudoku_gen_vis.png" alt="Sudoku Generation Examples"/>
+          <p class="caption" style="font-size: 1.1em;">
+            <b>Qualitative examples of unconditional Sudoku generation by GRAM.</b> Each board is generated from an empty grid. GRAM produces complete boards that satisfy all row, column, and box constraints.
+          </p>
+        </div>
+
+        <table class="results-table" style="max-width: 550px; margin: 1em auto;">
+          <thead>
+            <tr><th style="text-align:left;">Method</th><th>#Params</th><th>Steps</th><th>Validity (%)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td style="text-align:left;">D3PM-Uniform (Big)</td><td>55.1M</td><td>1000</td><td>91.33</td></tr>
+            <tr><td style="text-align:left;">D3PM-Uniform (Small)</td><td>15.9M</td><td>1000</td><td>29.24</td></tr>
+            <tr><td style="text-align:left;">D3PM-Absorb (Big)</td><td>55.1M</td><td>1000</td><td>79.18</td></tr>
+            <tr><td style="text-align:left;">D3PM-Absorb (Small)</td><td>15.9M</td><td>1000</td><td>21.88</td></tr>
+            <tr class="highlight"><td style="text-align:left;"><b>GRAM (Ours)</b></td><td><b>10.9M</b></td><td><b>16</b></td><td><b>99.05</b></td></tr>
+          </tbody>
+        </table>
+
+        <br>
+        <h4 class="title is-5">Image Generation on Binarized MNIST</h4>
+        <div class="content has-text-centered">
+          <img src="static/images/generation_process.png" alt="MNIST Generation Process"/>
+        </div>
+        <p class="caption" style="font-size: 1.1em;">
+          <b>Visualization of the generation process and samples.</b> GRAM progressively refines the generated image through recursive latent updates, correcting initial errors.
+        </p>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            The deterministic baseline TRM exhibits mode collapse (FID 303.29), whereas GRAM produces recognizable digits with IS and FID comparable to D3PM. <b>Inference-time scaling transfers to generation:</b> increasing recursion at inference improves quality monotonically (IS 1.85 &rarr; 2.04, FID 84.08 &rarr; 73.34 from 8 to 256 steps), even though training uses only 16 steps. This indicates that the iterative-refinement advantage of recursive models carries over into the generative regime.
+          </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/table_mnist.png" alt="MNIST Generation Results" style="max-width: 450px;"/>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr><br>
+  </div>
+
+
+<!-- Ablation Study -->
+  <div class="container is-max-desktop">
+    <div class="columns is-centered">
+      <div class="column is-full-width">
+        <h2 class="title is-3">Ablation Study</h2>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>Stochastic guidance provides consistent gains across architectures.</b> SG improves performance regardless of the underlying architecture: SG alone lifts the flat Looped TF baseline, and combining SG with deep supervision already reaches 100% on N-Queens. While the effect of hierarchical recursion is task-dependent, SG yields consistent gains in every configuration.
+          </p>
+          <p style="font-size: 1.1em;">
+            <b>Both stochasticity and guidance are essential.</b> Removing guidance maintains Sudoku performance but collapses on N-Queens (50.27%), where structured guidance is necessary to navigate multi-solution spaces. Removing stochasticity fails completely (0.0% on both tasks). Naive stochasticity (stochastic decoder, random init) does not help TRM, demonstrating that GRAM's gains stem from the variational framework rather than mere randomness.
+          </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/table_ablation.png" alt="Ablation Study Results" style="width: 100%;"/>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div class="container is-max-desktop">
+    <br><hr>
+  </div>
+</section>
+
+
+<!--BibTex citation -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title">BibTeX</h2>
+      <pre><code>@article{baek2025gram,
+  title={Generative Recursive Reasoning},
+  author={Junyeob Baek and Mingyu Jo and Minsu Kim and Mengye Ren and Yoshua Bengio and Sungjin Ahn},
+  year={2025}
+}</code></pre>
+    </div>
+</section>
+<!--End BibTex citation -->
+
+
+<footer class="footer">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This page was built using the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a> which was adopted from the <a href="https://nerfies.github.io" target="_blank">Nerfies</a> project page. This website is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/" target="_blank">Creative Commons Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</footer>
+
+  </body>
+  </html>
