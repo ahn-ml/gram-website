@@ -176,7 +176,7 @@
         <div class="content has-text-justified">
           <img src="static/images/puzzle_perf.png" alt="Puzzle Performance"/>
           <p class="caption" style="font-size: 1.1em;">
-            On both Sudoku-Extreme and ARC-AGI, GRAM consistently outperforms all deterministic recursive baselines (Looped TF, HRM, TRM), demonstrating that stochastic latent transitions yield substantial gains within the recursive-reasoning paradigm.
+            With a single sample, GRAM outperforms all deterministic recursive baselines (Looped TF, HRM, TRM) on both Sudoku-Extreme and ARC-AGI, reaching 86.6% against TRM's 83.6% on Sudoku-Extreme, 50.3% against 44.6% on ARC-AGI-1, and 9.5% against 7.8% on ARC-AGI-2. Parallel sampling lifts GRAM further to 96.1% on Sudoku-Extreme.
           </p>
         </div>
 
@@ -193,15 +193,15 @@
         <br>
         <div class="content has-text-justified">
           <p style="font-size: 1.1em;">
-            <b>Parallel sampling provides a new test-time scaling axis.</b> GRAM supports two complementary axes of inference-time scaling: <i>depth</i>, by varying the number of recursive transitions, and <i>width</i>, by sampling multiple latent reasoning trajectories in parallel. To select the best trajectory, we employ a Latent Process Reward Model (LPRM) that predicts output correctness from the latent state.
+            <b>Parallel sampling provides a new test-time scaling axis.</b> GRAM supports two complementary axes of inference-time scaling: <i>depth</i>, by varying the number of recursive transitions, and <i>width</i>, by sampling multiple latent reasoning trajectories in parallel. Candidates are aggregated by majority voting, which adds no parameters or training, so the gains are attributable to parallel sampling itself.
           </p>
         </div>
 
         <div class="content has-text-justified">
           <img src="static/images/scaling.png" alt="Inference-Time Scaling"/>
           <p class="caption" style="font-size: 1.1em;">
-            <b>(Left)</b> GRAM with N=20 samples at 16 iterations significantly outperforms TRM at 320 iterations (97.0% vs 90.5%), despite comparable computational budget.
-            <b>(Right)</b> Deterministic recursive models suffer sharp accuracy drops as the number of valid solutions increases, whereas GRAM maintains consistent performance.
+            <b>(Left) Recursion depth and parallel sampling.</b> All models benefit from longer recursion, while GRAM additionally scales with the number of samples N.
+            <b>(Right) Accuracy versus inference compute.</b> At nearly the same compute (8.48 vs. 8.19 TFLOPs per puzzle), GRAM with N=20 at 16 iterations reaches 96.1%, against 92.1% for TRM at 320 iterations. Because the samples run in parallel, GRAM takes 184 ms per puzzle against 2,755 ms for TRM. Curves show the mean over 3 seeds with one standard deviation.
           </p>
         </div>
       </div>
@@ -221,11 +221,20 @@
 
         <div class="content has-text-justified">
           <p style="font-size: 1.1em;">
-            <b>Deterministic recursion fails on multi-solution tasks.</b> Deterministic recursive models structurally cannot capture multiple solutions, with coverage at most 36.1% across all tasks. As the number of valid solutions increases, all three deterministic baselines exhibit sharp accuracy degradation, confirming that deterministic latent updates cause mode collapse when multiple valid outputs exist for the same input.
+            <b>Deterministic recursion fails on multi-solution tasks.</b> Deterministic recursive models structurally cannot capture multiple solutions, recovering at most 26.7% of valid solutions on any task, whereas sampling models recover 84.8% or more on 8&times;8 N-Queens. As the number of valid solutions increases, all three deterministic baselines exhibit sharp accuracy degradation, confirming that deterministic latent updates cause mode collapse when multiple valid outputs exist for the same input.
           </p>
           <p style="font-size: 1.1em;">
-            <b>Recursive refinement yields sharper constraint satisfaction.</b> While generative models (AR, MDLM) achieve high coverage, GRAM consistently attains higher accuracy with comparable diversity. On N-Queens, GRAM reaches 99.7% accuracy versus 96.3% (AR) and 96.1% (MDLM). The gap is more pronounced on Graph Coloring, where GRAM reduces conflict edges to 2.7 and 3.3 on 8- and 10-vertex tasks, compared to 19.0 and 61.3 for AR. This demonstrates that recursive refinement enables stricter constraint satisfaction than generative sampling alone.
+            <b>Recursive refinement yields sharper constraint satisfaction.</b> While generative models (AR, MDLM) achieve high coverage, GRAM satisfies constraints more reliably in most settings while attaining the highest coverage on all four tasks. On 8&times;8 N-Queens, GRAM reaches 99.5% accuracy with a single sample versus 96.3% (AR) and 96.1% (MDLM). The gap is more pronounced on Graph Coloring, where GRAM reduces conflict edges to 2.7 and 3.3 on 8- and 10-vertex tasks, compared to 19.0 and 61.3 for AR. This demonstrates that recursive refinement enables stricter constraint satisfaction than generative sampling alone.
           </p>
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/nqueens_by_solutions.png" alt="Accuracy by number of valid solutions" style="max-width: 480px;"/>
+          <div class="has-text-justified">
+          <p class="caption" style="font-size: 1.1em;">
+            <b>Accuracy by number of valid solutions.</b> Single-sample accuracy on 8&times;8 N-Queens, grouped by the number of valid solutions per input. Deterministic recursive baselines lose accuracy as solutions increase, whereas GRAM stays flat.
+          </p>
+          </div>
         </div>
 
         <div class="content has-text-centered">
@@ -325,13 +334,20 @@
             <tr><th style="text-align:left;">Method</th><th>#Params</th><th>Steps</th><th>Validity (%)</th></tr>
           </thead>
           <tbody>
-            <tr><td style="text-align:left;">D3PM-Uniform (Big)</td><td>55.1M</td><td>1000</td><td>91.33</td></tr>
-            <tr><td style="text-align:left;">D3PM-Uniform (Small)</td><td>15.9M</td><td>1000</td><td>29.24</td></tr>
-            <tr><td style="text-align:left;">D3PM-Absorb (Big)</td><td>55.1M</td><td>1000</td><td>79.18</td></tr>
-            <tr><td style="text-align:left;">D3PM-Absorb (Small)</td><td>15.9M</td><td>1000</td><td>21.88</td></tr>
+            <tr><td style="text-align:left;">D3PM (Big)</td><td>55.1M</td><td>1000</td><td>79.18</td></tr>
+            <tr><td style="text-align:left;">D3PM (Small)</td><td>15.9M</td><td>1000</td><td>21.88</td></tr>
             <tr class="highlight"><td style="text-align:left;"><b>GRAM (Ours)</b></td><td><b>10.9M</b></td><td><b>16</b></td><td><b>99.05</b></td></tr>
           </tbody>
         </table>
+
+        <div class="content has-text-centered">
+          <img src="static/images/sudoku_traj.png" alt="Generation trajectories of D3PM and GRAM"/>
+          <div class="has-text-justified">
+          <p class="caption" style="font-size: 1.1em;">
+            <b>Generation trajectories of D3PM and GRAM on unconditional Sudoku.</b> Each row shows successive states of a single generation from an empty grid, D3PM over denoising steps and GRAM over recursion steps. GRAM proposes a complete board at its first step and corrects it in place, while D3PM fills cells progressively. Incorrect digits are highlighted in red.
+          </p>
+          </div>
+        </div>
 
         <br>
         <h4 class="title is-5">Image Generation on Binarized MNIST</h4>
@@ -344,7 +360,7 @@
 
         <div class="content has-text-justified">
           <p style="font-size: 1.1em;">
-            The deterministic baseline TRM exhibits mode collapse (FID 303.29), whereas GRAM produces recognizable digits with IS and FID comparable to D3PM. <b>Inference-time scaling transfers to generation:</b> increasing recursion at inference improves quality monotonically (IS 1.85 &rarr; 2.04, FID 84.08 &rarr; 73.34 from 8 to 256 steps), even though training uses only 16 steps. This indicates that the iterative-refinement advantage of recursive models carries over into the generative regime.
+            The deterministic baseline TRM exhibits mode collapse (FID 303.29), whereas GRAM samples diverse digits from its prior, outperforming VAE with only 16 steps and surpassing D3PM on both IS and FID with 256 steps, still far fewer than D3PM's 1,000 steps. <b>Inference-time scaling transfers to generation:</b> increasing recursion at inference improves quality monotonically (IS 1.89 &rarr; 2.04, FID 77.79 &rarr; 73.34 from 16 to 256 steps), even though training uses only 16 steps. This indicates that the iterative-refinement advantage of recursive models carries over into the generative regime.
           </p>
         </div>
 
@@ -368,10 +384,10 @@
 
         <div class="content has-text-justified">
           <p style="font-size: 1.1em;">
-            <b>Stochastic guidance provides consistent gains across architectures.</b> SG improves performance regardless of the underlying architecture: SG alone lifts the flat Looped TF baseline, and combining SG with deep supervision already reaches 100% on N-Queens. While the effect of hierarchical recursion is task-dependent, SG yields consistent gains in every configuration.
+            <b>Stochastic guidance provides consistent gains across architectures.</b> SG improves both the flat Looped TF baseline and the hierarchically recursive TRM variant. With SG, Looped TF reaches 74.0% on Sudoku and 87.3% on N-Queens at N=20. Combined with deep supervision and hierarchical recursion, SG yields the full GRAM model, achieving the best overall performance (96.1% / 100.0%).
           </p>
           <p style="font-size: 1.1em;">
-            <b>Both stochasticity and guidance are essential.</b> Removing guidance maintains Sudoku performance but collapses on N-Queens (50.27%), where structured guidance is necessary to navigate multi-solution spaces. Removing stochasticity fails completely (0.0% on both tasks). Naive stochasticity (stochastic decoder, random init) does not help TRM, demonstrating that GRAM's gains stem from the variational framework rather than mere randomness.
+            <b>Stochasticity and guidance play complementary roles.</b> Removing guidance retains strong performance on Sudoku (96.0%) but degrades substantially on N-Queens (62.1%). Removing stochasticity fails completely on both tasks (0.0%). Stochasticity thus provides the exploration that recursion relies on, while guidance steers this exploration toward valid solutions, which matters most when multiple solutions compete as in N-Queens. Naive stochasticity added to TRM (stochastic decoding, random initialization) remains below GRAM on both tasks, suggesting that the gains stem from variationally modeling stochastic transitions rather than from mere randomness.
           </p>
         </div>
 
