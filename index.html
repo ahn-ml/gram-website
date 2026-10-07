@@ -221,10 +221,22 @@
 
         <div class="content has-text-justified">
           <p style="font-size: 1.1em;">
-            <b>Deterministic recursion fails on multi-solution tasks.</b> A deterministic model must squeeze several valid answers into one output. On 8&times;8 N-Queens, deterministic baselines reach at most 78.7% accuracy (GRAM 99.5%) and recover at most 26.7% of valid solutions, while sampling models recover 84.8% or more. The more solutions an input has, the more accuracy they lose, whereas GRAM stays flat even with a single sample.
+            <b>Deterministic recursion fails on multi-solution tasks.</b> A deterministic model must squeeze several valid answers into one output. On 8&times;8 N-Queens, deterministic baselines reach at most 78.7% accuracy (GRAM 99.5%) and recover at most 26.7% of valid solutions, while sampling models recover 84.8% or more.
           </p>
           <p style="font-size: 1.1em;">
             <b>Recursive refinement yields sharper constraint satisfaction.</b> Generative models (AR, MDLM) also cover many solutions, but their samples break constraints more often in most settings. GRAM reaches 99.5% on 8&times;8 N-Queens and leaves under a third of AR's conflict edges on Graph Coloring, and it still comes out ahead on most tasks when every generative model draws 20 samples.
+          </p>
+        </div>
+
+        </div>
+
+        <div class="content has-text-centered">
+          <img src="static/images/table_csp.png" alt="N-Queens and Graph Coloring Results" style="width: 100%;"/>
+        </div>
+
+        <div class="content has-text-justified">
+          <p style="font-size: 1.1em;">
+            <b>The gap grows with the number of solutions.</b> Grouping 8&times;8 N-Queens inputs by their number of valid solutions, deterministic models lose accuracy as solutions increase, whereas GRAM stays flat even with a single sample. More valid solutions mean more conflicting targets, which a deterministic model must collapse into a single output, while GRAM absorbs this ambiguity in its latent trajectory.
           </p>
         </div>
 
@@ -235,11 +247,6 @@
             <b>Accuracy by number of valid solutions.</b> Single-sample accuracy on 8&times;8 N-Queens, grouped by the number of valid solutions per input. Deterministic recursive baselines lose accuracy as solutions increase, whereas GRAM stays flat.
           </p>
           </div>
-        </div>
-
-        <div class="content has-text-centered">
-          <img src="static/images/table_csp.png" alt="N-Queens and Graph Coloring Results" style="width: 100%;"/>
-        </div>
       </div>
     </div>
   </div>
